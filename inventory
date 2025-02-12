@@ -1,2 +1,3 @@
-192.168.101.18       DEV-DSKTP-BillyN
-192.168.91.107 dl-testnode
+192.168.91.107 ansible_user=billy.nguyen@sentientvision.com
+[localhost]
+192.168.101.18 ansible_connection=local

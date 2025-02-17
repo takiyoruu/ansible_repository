@@ -1,0 +1,45 @@
+---
+
+- hosts: compute_nodes
+  become: true
+  pre_tasks:
+
+  - name: update repository index
+    tags: always
+    apt:
+      update_cache: yes
+    changed_when: false
+    when: ansible_distribution == "Ubuntu"
+
+- hosts: compute_nodes
+  become: true
+  tasks:
+
+  - name: start munge
+    tags: munge
+    service:
+      name: munge
+      state: started
+      enabled: yes
+
+  - name: start slurmd
+    tags: slurm
+    service:
+      name: slurmd
+      state: started
+      enabled: yes
+
+#  - name: Slurm Configuration
+#    tags: slurm
+#    lineinfile:
+#      path: /usr/local/etc/slurm.conf
+#      regexp:
+#      line:
+#    register: slurmconf
+
+#  - name: restart slurm
+#    tags: slurm
+#    service:
+#      name: slurmd
+#      state: restarted
+#    when: slurmconf.changed

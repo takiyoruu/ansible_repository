@@ -1,0 +1,17 @@
+---
+
+- hosts: compute_nodes
+  become: true
+  tasks:
+
+  - name: restart slurm
+    tags: slurm
+    service:
+      name: slurmd
+      state: restarted
+
+  - name: restart munge
+    tags: munge
+    service:
+       name: munge
+       state: restarted

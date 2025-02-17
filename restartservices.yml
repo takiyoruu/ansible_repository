@@ -4,11 +4,11 @@
   become: false
   tasks:
 
-  - name: restart slurm
-    tags: slurm
-    service:
-      name: slurmd
-      state: restarted
+#  - name: restart slurm
+#    tags: slurm
+#    service:
+#      name: slurmd
+#      state: restarted
 
   - name: restart munge
     tags: munge

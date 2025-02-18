@@ -1,1 +1,4 @@
+[controller_node]
+192.168.101.18 ansible_connection=local
+[compute_nodes]
 192.168.91.107 ansible_user=billy.nguyen@sentientvision.com

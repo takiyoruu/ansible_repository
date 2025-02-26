@@ -9,6 +9,9 @@
     - name: Install dependencies
       ansible.builtin.apt:
         name:
+          - libaio1
+          - bison
+          - cmake
           - libhttp-parser2.9
           - libjwt-dev
           - libhttp-parser-dev
@@ -18,7 +21,6 @@
           - libmysqlclient-dev
           - libssl-dev
           - pkg-config
-          - mysql-client
           - mariadb-client
           - mariadb-server
           - libjwt0
@@ -47,24 +49,29 @@
         update: yes
       tags: clone
 
-    - name: Run autogen.sh
-      command:
-        cmd: "./autogen.sh"
+    - name: List files in the Munge directory
+      command: ls -la
+      args:
+        chdir: "/home/billy.nguyen@sentientvision.com/Work/Munge"
+
+    - name: Run autoreconf (if necessary)
+      command: autoreconf -i
+      args:
         chdir: "/home/billy.nguyen@sentientvision.com/Work/Munge"
 
     - name: Configure Munge
-      command:
-        cmd: "./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --runstatedir=/run"
+      command: "./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --runstatedir=/run"
+      args:
         chdir: "/home/billy.nguyen@sentientvision.com/Work/Munge"
 
     - name: Compile Munge (make)
-      command:
-        cmd: "make"
+      command: "make"
+      args:
         chdir: "/home/billy.nguyen@sentientvision.com/Work/Munge"
 
     - name: Install Munge (make install)
-      command:
-        cmd: "make install"
+      command: "make install"
+      args:
         chdir: "/home/billy.nguyen@sentientvision.com/Work/Munge"
       become: true
 
@@ -146,21 +153,28 @@
         update: yes
       tags: clone
 
-    - name: Run autogen.sh
-      command:
-        cmd: "./autogen.sh"
+    - name: List files in the Slurm directory
+      command: ls -la
+      args:
         chdir: "/home/billy.nguyen@sentientvision.com/Work/Slurm"
 
+    - name: Run autoreconf (if necessary)
+      command: autoreconf -i
+      args:
+        chdir: "/home/billy.nguyen@sentientvision.com/Work/Slurm"
+      when: "'configure' not in lookup('fileglob', '/home/billy.nguyen@sentientvision.com/Work/Slurm/*')"
+
     - name: Configure Slurm
-      command:
-        cmd: "./configure --with-jwt=/usr/local/ --with-bpf --with-http-parser=/usr/local/"
+      command: "./configure --with-jwt=/usr/local/ --with-bpf --with-http-parser=/usr/local/"
+      args:
         chdir: "/home/billy.nguyen@sentientvision.com/Work/Slurm"
 
     - name: Install Slurm (make install)
-      command:
-        cmd: "make install"
+      command: "make install"
+      args:
         chdir: "/home/billy.nguyen@sentientvision.com/Work/Slurm"
       become: true
+
 
 - hosts: controller_node
   become: true
@@ -408,7 +422,7 @@
 
     - name: Copy systemd service files
       copy:
-        src: "/home/billy.nguyen@sentientvision.com/Work/Slurm/slurm-24.11.1/etc/{{ item }}"
+        src: "/home/billy.nguyen@sentientvision.com/Work/Slurm/etc/{{ item }}"
         dest: "/etc/systemd/system/{{ item }}"
         mode: '0644'
       loop:
@@ -527,6 +541,26 @@
           slurm.log_info("initialized")
           return slurm.SUCCESS
         mode: '0644'
+
+    - name: Generate JWT HS256 key
+      command: openssl rand -base64 32
+      register: jwt_key
+
+    - name: Create directory for JWT key file
+      file:
+        path: /var/spool/slurm/statesave
+        state: directory
+        mode: '0755'
+        owner: slurm
+        group: slurm
+
+    - name: Write JWT HS256 key to file
+      copy:
+        content: "{{ jwt_key.stdout }}"
+        dest: /var/spool/slurm/statesave/jwt_hs256.key
+        owner: slurm
+        group: slurm
+        mode: '0600'
 
 - hosts: controller_node
   become: true

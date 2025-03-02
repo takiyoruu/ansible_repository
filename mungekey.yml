@@ -1,0 +1,41 @@
+---
+- hosts: controller_node
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Copy /etc/munge/munge.key to home directory
+      copy:
+        src: /etc/munge/munge.key
+        dest: ~/
+        mode: '777'
+
+    - name: Transfer munge.key to remote node
+      ansible.builtin.shell: scp ~/munge.key billy.nguyen@sentientvision.com@192.168.91.107:/home/billy.nguyen@sentientvision.com
+      register: scp_result
+      changed_when: scp_result.rc == 0
+      ignore_errors: true
+
+    - name: Remove local munge.key if transfer was successful
+      file:
+        path: ~/munge.key
+        state: absent
+      when: scp_result.rc == 0
+
+- hosts: compute_nodes
+  become: true
+  tasks:
+    - name: Move munge.key to /etc/munge/
+      command: mv /home/billy.nguyen@sentientvision.com/munge.key /etc/munge/munge.key
+      args:
+        removes: /home/billy.nguyen@sentientvision.com/munge.key
+
+    - name: Change ownership to munge:munge
+      file:
+        path: /etc/munge/munge.key
+        owner: munge
+        group: munge
+
+    - name: Set permissions for Munge.key
+      file:
+        path: /etc/munge/munge.key
+        mode: '0700'

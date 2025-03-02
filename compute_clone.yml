@@ -1,0 +1,23 @@
+---
+- hosts: compute_nodes
+  become: true
+  tasks:
+    - name: Clone Slurm repository (slurm-24.11 branch)
+      git:
+        repo: "https://github.com/SchedMD/slurm.git"
+        dest: "/home/billy.nguyen@sentientvision.com/work"
+        version: "slurm-24.11"
+        update: yes
+      tags: clone
+
+    - name: Configure Slurm
+      command: "./configure"
+      args:
+        chdir: "/home/billy.nguyen@sentientvision.com/work"
+
+    - name: Install Slurm (make install)
+      command: "make install"
+      args:
+        chdir: "/home/billy.nguyen@sentientvision.com/work"
+      become: true
+

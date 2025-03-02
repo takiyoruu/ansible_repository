@@ -1,0 +1,120 @@
+---
+- hosts: compute_nodes
+  become: true
+  tasks:
+    - name: Clone Munge repository
+      git:
+        repo: "https://github.com/dun/munge.git"
+        dest: "" #
+        version: "master"
+        update: yes
+      tags: clone
+
+    - name: List files in the Munge directory
+      command: ls -la
+      args:
+        chdir: "" #
+
+    - name: Run autoreconf (if necessary)
+      command: autoreconf -i
+      args:
+        chdir: "" #
+
+    - name: Configure Munge
+      command: "./configure"
+      args:
+        chdir: "" #
+
+    - name: Compile Munge (make)
+      command: "make"
+      args:
+        chdir: "" #
+
+    - name: Create munge group
+      group:
+        name: munge
+        state: present
+
+    - name: Create munge user
+      user:
+        name: munge
+        group: munge
+        home: /var/lib/munge
+        shell: /sbin/nologin
+        system: yes
+        state: present
+
+    - name: Set ownership and permissions on /etc/munge
+      file:
+        path: /etc/munge
+        owner: munge
+        group: munge
+        mode: '0700'
+        recurse: yes
+
+    - name: Ensure /var/log is owned by root and has mode 0755
+      file:
+        path: /var/log
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Create /var/log/munge directory with correct permissions
+      file:
+        path: /var/log/munge
+        state: directory
+        owner: munge
+        group: munge
+        mode: '0750'
+
+
+    - name: Install Munge (make install)
+      command: "make install"
+      args:
+        chdir: "" #
+      become: true
+
+    - name: Clone Slurm repository (slurm-24.11 branch)
+      git:
+        repo: "https://github.com/SchedMD/slurm.git"
+        dest: "" #
+        version: "slurm-24.11"
+        update: yes
+      tags: clone
+
+    - name: Configure Slurm
+      command: "./configure"
+      args:
+        chdir: "" #
+
+    - name: Install Slurm (make install)
+      command: "make install"
+      args:
+        chdir: "" #
+      become: true
+
+    - name: Create slurm group
+      group:
+        name: slurm
+        state: present
+
+    - name: Create slurm user
+      user:
+        name: slurm
+        group: slurm
+        home: /var/lib/slurm
+        shell: /sbin/nologin
+        system: yes
+        state: present
+
+# Copying Munge.key and SCP to compute Nodes
+- hosts: controller
+  become: true
+  tasks:
+    - name: Clone Munge repository
+      git:
+        repo: "https://github.com/dun/munge.git"
+        dest: "" #
+        version: "master"
+        update: yes
+      tags: clone

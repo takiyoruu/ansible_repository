@@ -1,17 +1,10 @@
 ---
-
-- hosts: controller_node
-  become: true
+- name: Restart Slurm Controller
+  hosts: controller_node
+  become: yes
   tasks:
-
-  - name: restart munge
-    tags: munge
-    service:
-       name: munge
-       state: restarted
-
-  - name: restart slurm
-    tags: slurm
-    service:
-      name: slurmd
-      state: restarted
+    - name: Ensure Munge is running
+      systemd:
+        name: munge
+        state: restarted
+        enabled: yes

@@ -1,0 +1,11 @@
+---
+- name: Restart Slurm Controller
+  hosts: controller_node
+  become: yes
+  tasks:
+    - name: Restart Slurm Controller
+      systemd:
+        name: slurmctld
+        state: restarted
+        enabled: yes
+

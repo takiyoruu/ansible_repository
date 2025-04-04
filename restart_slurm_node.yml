@@ -1,0 +1,10 @@
+---
+- name: Restart Slurm Node
+  hosts: compute_node
+  become: yes
+  tasks:
+    - name: Restart Slurm Daemon
+      systemd:
+        name: slurmd
+        state: restarted
+        enabled: yes

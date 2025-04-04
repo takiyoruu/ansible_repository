@@ -1,0 +1,22 @@
+---
+- name: Restart Slurm Node
+  hosts: controller_node
+  become: yes
+  tasks:
+    - name: Restart MariaDB
+      systemd:
+        name: mariadb
+        state: restarted
+        enabled: yes
+
+    - name: Restart Slurm Database
+      systemd:
+        name: slurmdbd
+        state: restarted
+        enabled: yes
+
+    - name: Restart Slurm Controller
+      systemd:
+        name: slurmctld
+        state: restarted
+        enabled: yes

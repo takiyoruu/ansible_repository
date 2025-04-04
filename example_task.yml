@@ -1,8 +1,10 @@
 ---
-- name: Gather facts only
-  hosts: all
-  gather_facts: yes
+- name: Simple test playbook
+  hosts: controller_node
+  become: yes
   tasks:
-    - name: Just print a message to confirm facts were gathered
-      debug:
-        msg: "Facts have been gathered for {{ inventory_hostname }}"
+    - name: Create a file to test Ansible
+      file:
+        path: /tmp/ansible_test_file.txt
+        state: touch
+        mode: '0644'

@@ -86,6 +86,12 @@
           - slurm-web-gateway
         state: present
 
+    - name: Create directory /etc/slurm-web
+      ansible.builtin.file:
+        path: /etc/slurm-web
+        state: directory
+        mode: '0755'
+
 - hosts: controller_node
   become: yes
   tasks:
@@ -143,6 +149,12 @@
           [agents]
           url=http://localhost:5012
         mode: '0644'
+
+    - name: Create directory /var/lib/slurm
+      ansible.builtin.file:
+        path: /var/lib/slurm-web
+        state: directory
+        mode: '0755'
 
     - name: Generate JWT key for Slurm web API
       command: sudo /usr/libexec/slurm-web/slurm-web-gen-jwt-key

@@ -2,9 +2,32 @@
 - hosts: controller_node
   become: true
   tasks:
+    - name: Repository signing key
+      shell: |
+        sudo curl -sS https://pkgs.rackslab.io/keyring.asc | gpg --dearmor | sudo tee /usr/share/keyrings/rackslab.gpg > /dev/null
+
+- hosts: controller_node
+  become: yes
+  tasks:
+    - name: Create APT sources file
+      ansible.builtin.copy:
+        dest: "/etc/apt/sources.list.d/rackslab.sources"
+        content: |
+          Types: deb
+          URIs: https://pkgs.rackslab.io/deb
+          Suites: ubuntu24.04
+          Components: main
+          Architectures: amd64
+          Signed-By: /usr/share/keyrings/rackslab.gpg
+        mode: '0644'
+
+- hosts: controller_node
+  become: true
+  tasks:
     - name: Update apt package cache
       ansible.builtin.apt:
         update_cache: yes
+
 
     - name: Install Slurm-web, Racksdb and dependencies
       ansible.builtin.apt:
@@ -19,9 +42,9 @@
   become: true
   tasks:
     - name: Install SlurmRest package using dpkg
-      command: dpkg -i /home/billy.nguyen@sentientvision.com/Work/SlurmRest/slurmrestd_24.11.1-1_amd64.deb
+      command: sudo dpkg -i /home/bnguyen/Work/SlurmRest/slurmrestd_24.11.1-1_amd64.deb
       args:
-        chdir: /home/billy.nguyen@sentientvision.com/Work/SlurmRest
+        chdir: /home/bnguyen/Work/SlurmRest
       register: dpkg_install
       ignore_errors: yes
 
@@ -38,7 +61,7 @@
   tasks:
     - name: Create Slurmrest Config file
       ansible.builtin.copy:
-        dest: "/etc/systemd/system/slurmrestd.service.d/slurm.web.conf"
+        dest: "/etc/systemd/system/slurmrestd.service.d/slurm-web.conf"
         content: |
           [Service]
           # Unset vendor unit ExecStart to avoid cumulative definition
@@ -54,27 +77,14 @@
         mode: '0644'
 
 - hosts: controller_node
-  become: true
-  tasks:
-    - name: Repository signing key
-      shell: |
-        curl -sS https://pkgs.rackslab.io/keyring.asc | gpg --dearmor | sudo tee /usr/share/keyrings/rackslab.gpg > /dev/null
-
-
-- hosts: controller_node
   become: yes
   tasks:
-    - name: Create APT sources file
-      ansible.builtin.copy:
-        dest: "/etc/apt/sources.list.d/rackslab.sources"
-        content: |
-          Types: deb
-          URIs: https://pkgs.rackslab.io/deb
-          Suites: ubuntu24.04
-          Components: main
-          Architectures: amd64
-          Signed-By: /usr/share/keyrings/rackslab.gpg
-        mode: '0644'
+    - name: Install Slurm-Web-Agent and Slurm-Web-Gateway
+      ansible.builtin.apt:
+        name:
+          - slurm-web-agent
+          - slurm-web-gateway
+        state: present
 
 - hosts: controller_node
   become: yes
@@ -135,10 +145,18 @@
         mode: '0644'
 
     - name: Generate JWT key for Slurm web API
-      command: /usr/libexec/slurm-web/slurm-web-gen-jwt-key
+      command: sudo /usr/libexec/slurm-web/slurm-web-gen-jwt-key
       args:
         creates: /var/lib/slurm/slurm-web.jwks
       register: jwt_key_output
+
+    - name: Set correct ownership for JWT key
+      file:
+        path: /var/lib/slurm-web/jwt.key
+        owner: slurm
+        group: slurm-web
+        mode: '0440'
+      when: jwt_key_output.changed
 
 - hosts: controller_node
   become: true

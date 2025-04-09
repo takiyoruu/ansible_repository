@@ -9,15 +9,15 @@
 #        dest: ~/
 #        mode: '777'
 
-    - name: Transfer munge.key to home dir
-      copy:
+   - name: Transfer munge.key to home dir
+     copy:
         src: /absolute/path/to/munge.key
         dest: /home/billy.nguyen@sentientvision.com/munge.key
         owner: billy.nguyen@sentientvision.com
-        mode: '0600'
+       mode: '0600'
 
-     - name: Remove local munge.key if transfer was successful
-       file:
+    - name: Remove local munge.key if transfer was successful
+      file:
         path: ~/munge.key
         state: absent
        when: scp_result.rc == 0

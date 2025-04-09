@@ -3,11 +3,11 @@
   gather_facts: false
   become: true
   tasks:
-#    - name: Copy /etc/munge/munge.key to home directory
-#      copy:
-#        src: /etc/munge/munge.key
-#        dest: ~/
-#        mode: '777'
+    - name: Copy /etc/munge/munge.key to home directory
+      copy:
+        src: /etc/munge/munge.key
+        dest: ~/
+        mode: '777'
 
    - name: Transfer munge.key to home dir
      copy:

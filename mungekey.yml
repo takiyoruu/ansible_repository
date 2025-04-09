@@ -11,7 +11,7 @@
 
    - name: Transfer munge.key to home dir
      copy:
-        src: /absolute/path/to/munge.key
+        src: /home/bnguyen/munge.key
         dest: /home/billy.nguyen@sentientvision.com/munge.key
         owner: billy.nguyen@sentientvision.com
         mode: '0600'

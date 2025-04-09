@@ -16,11 +16,11 @@
         owner: billy.nguyen@sentientvision.com
         mode: '0600'
 
-    - name: Remove local munge.key if transfer was successful
-      file:
+   - name: Remove local munge.key if transfer was successful
+     file:
         path: ~/munge.key
         state: absent
-       when: scp_result.rc == 0
+        when: scp_result.rc == 0
 
 - hosts: compute_nodes
   become: true

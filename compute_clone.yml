@@ -44,7 +44,7 @@
         system: yes
         state: present
 
-   - name: Set ownership and permissions on /etc/munge
+    - name: Set ownership and permissions on /etc/munge
       file:
         path: /etc/munge
         owner: munge
@@ -109,7 +109,7 @@
         chdir: "/home/billy.nguyen@sentientvision.com/work/Slurm"
       become: true
 
-   - name: Create slurm group
+    - name: Create slurm group
       group:
         name: slurm
         state: present

@@ -28,17 +28,17 @@
       register: cp_backup
       ignore_errors: yes
 
-    - name: Backup Var files
-      command:
-        cmd: cp {{ var_dir }} {{ backup_dir }}
-      register: cp_backup
-      ignore_errors: yes
+#    - name: Backup Var files
+#      command:
+#        cmd: cp {{ var_dir }} {{ backup_dir }}
+#      register: cp_backup
+#      ignore_errors: yes
 
-    - name: Backup Log files
-      command:
-        cmd: cp {{ log_dir }} {{ backup_dir }}
-      register: cp_backup
-      ignore_errors: yes
+#    - name: Backup Log files
+#      command:
+#        cmd: cp {{ log_dir }} {{ backup_dir }}
+#      register: cp_backup
+#      ignore_errors: yes
 
     - name: Backup munge.key
       command:

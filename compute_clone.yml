@@ -23,10 +23,10 @@
         update: yes
       tags: clone
 
-    - name: Generate configure script (autoreconf)
-      command: autoreconf -i
-      args:
-        chdir: "/home/billy.nguyen@sentientvision.com/work/Munge"
+#    - name: Generate configure script (autoreconf)
+#      command: autoreconf -i
+#      args:
+#        chdir: "/home/billy.nguyen@sentientvision.com/work/Munge"
 
     - name: Configure Munge
       command: ./configure

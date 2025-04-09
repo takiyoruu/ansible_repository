@@ -120,7 +120,6 @@
       command: "make install"
       args:
         chdir: "/home/billy.nguyen@sentientvision.com/work/Slurm"
-      become: true
 
     - name: Create slurm group
       group:

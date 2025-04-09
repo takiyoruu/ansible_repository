@@ -1,0 +1,48 @@
+---
+- hosts: controller_node
+  become: true
+  vars:
+    slurm_dir: "/etc/slurm"
+    service_dir: "/lib/systemd/system"
+    backup_dir: "/mnt/UltraNAS/FastDisk/DeepLearning/SlurmBackup"
+    slurm_backup_name: "slurm_backup"
+    files_to_backup:
+      - "slurmctld.service"
+      - "slurmd.service"
+
+  tasks:
+    - name: Update apt package cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Slurm Backup
+      command:
+        cmd: cp -r {{ slurm_dir }} {{ backup_dir }}/{{ slurm_backup_name }}
+      register: cp_backup
+      ignore_errors: yes
+
+    - name: Backup service files
+      command:
+        cmd: cp {{ service_dir }}/{{ item }} {{ backup_dir }}/{{ item }}
+      with_items: "{{ files_to_backup }}"
+      register: cp_backup
+      ignore_errors: yes
+
+    - name: Backup Var files
+      command:
+        cmd: cp {{ var_dir }} {{ backup_dir }}
+      register: cp_backup
+      ignore_errors: yes
+
+    - name: Backup Log files
+      command:
+        cmd: cp {{ log_dir }} {{ backup_dir }}
+      register: cp_backup
+      ignore_errors: yes
+
+    - name: Backup munge.key
+      command:
+        cmd: cp {{ munge_dir }}/{{ item }} {{ backup_dir }}/{{ item }}
+      with_items: "{{ key_file }}"
+      register: mungekey_backup
+      ignore_errors: yes

@@ -1,0 +1,36 @@
+---
+- hosts: controller_node
+  become: true
+  vars:
+    service_dir: "/lib/systemd/system"
+    slurm_dir: "/etc/slurm"
+    munge_dir: "/etc/munge/munge.key"
+    slurm_backup_dir: "/mnt/UltraNAS/FastDisk/DeepLearning/SlurmBackup/etc/slurm"
+    service_files:
+      - "slurmctld.service"
+      - "slurmd.service"
+
+  tasks:
+    - name: Update apt package cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Slurm Rollback
+      command:
+        cmd: cp -r {{ slurm_backup_dir }} {{ slurm_dir }}
+      register: cp_rollback
+      ignore_errors: yes
+
+    - name: Rollback service files
+      command:
+        cmd: cp {{ backup_dir }}/{{ item }} {{ service_dir }}/{{ item }}
+      with_items: "{{ files_to_backup }}"
+      register: cp_rollback
+      ignore_errors: yes
+
+     - name: Backup munge.key
+      command:
+        cmd: cp {{ backup_dir }}/{{ item }} {{ munge_dir }}/{{ item }}
+      with_items: "{{ key_file }}"
+      register: mungekey_rollback
+      ignore_errors: yes

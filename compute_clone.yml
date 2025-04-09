@@ -15,7 +15,7 @@
       tags: clone
 
     - name: Configure Munge
-      command: "./configure"
+      command: "configure"
       args:
         chdir: "/home/billy.nguyen@sentientvision.com/work/Munge"
 

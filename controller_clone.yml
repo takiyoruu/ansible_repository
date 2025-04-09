@@ -103,10 +103,10 @@
       args:
         chdir: "/home/bnguyen/Work/Munge"
 
-    - name: Run autoreconf (if necessary)
-      command: autoreconf -i
-      args:
-        chdir: "/home/bnguyen/Work/Munge"
+#    - name: Run autoreconf (if necessary)
+#      command: autoreconf -i
+#      args:
+#        chdir: "/home/bnguyen/Work/Munge"
 
     - name: Configure Munge
       command: "./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --runstatedir=/run"

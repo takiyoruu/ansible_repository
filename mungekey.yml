@@ -3,11 +3,11 @@
   gather_facts: false
   become: true
   tasks:
-    - name: Copy /etc/munge/munge.key to home directory
-      copy:
-        src: /etc/munge/munge.key
-        dest: ~/
-        mode: '777'
+#    - name: Copy /etc/munge/munge.key to home directory
+#      copy:
+#        src: /etc/munge/munge.key
+#        dest: ~/
+#        mode: '777'
 
     - name: Transfer munge.key to remote node
       ansible.builtin.shell: scp ~/munge.key billy.nguyen@sentientvision.com@192.168.91.107:/home/billy.nguyen@sentientvision.com

@@ -69,7 +69,7 @@
           Environment=
           # Disable slurm user security check
           Environment=SLURMRESTD_SECURITY=disable_user_check
-          ExecStart=/usr/sbin/slurmrestd $SLURMRESTD_OPTIONS unix:/run/slurmrestd/slurmrestd.socket
+          ExecStart=/usr/local/sbin/slurmrestd $SLURMRESTD_OPTIONS unix:/run/slurmrestd/slurmrestd.socket
           RuntimeDirectory=slurmrestd
           RuntimeDirectoryMode=0755
           User=slurm-web

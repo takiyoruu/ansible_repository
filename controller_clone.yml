@@ -9,11 +9,10 @@
     - name: Install dependencies
       ansible.builtin.apt:
         name:
-          - libaio1
+          - libaio-dev
           - bison
           - cmake
           - libhttp-parser2.9
-          - libjwt-dev
           - libhttp-parser-dev
           - libjson-c-dev
           - build-essential
@@ -23,9 +22,7 @@
           - pkg-config
           - mariadb-client
           - mariadb-server
-          - libjwt0
           - libjwt-dev
-          - libhwloc-dev
           - libjansson-dev
           - libdbus-1-dev
           - linux-headers-{{ ansible_kernel }}
@@ -35,8 +32,60 @@
           - libhwloc-dev
           - libcurl4-openssl-dev
           - libpci-dev
+          - libtool
+          - autoconf
         state: present
       register: dependencies_install
+
+- hosts: controller_node
+  become: yes
+  tasks:
+    - name: Clone the http-parser repository
+      git:
+        repo: https://github.com/nodejs/http-parser.git
+        dest: /tmp/http_parser
+        version: v2.9.4
+        depth: 1
+        single_branch: yes
+
+    - name: Build and install http-parser
+      shell: |
+        cd /tmp/http_parser
+        make
+        sudo make install
+      args:
+        creates: /usr/local/lib/libhttp_parser.so
+
+- hosts: controller_node
+  become: yes
+  tasks:
+    - name: Clone libjwt repository
+      git:
+        repo: "https://github.com/benmcollins/libjwt.git"
+        dest: "/tmp/libjwt"
+        version: "v1.12.0"
+        depth: 1
+        single_branch: yes
+
+    - name: Run autoreconf
+      command: autoreconf --force --install
+      args:
+        chdir: "/tmp/libjwt"
+
+    - name: Configure libjwt
+      command: ./configure --prefix=/usr/local
+      args:
+        chdir: "/tmp/libjwt"
+
+    - name: Compile libjwt
+      command: make -j
+      args:
+        chdir: "/tmp/libjwt"
+
+    - name: Install libjwt
+      command: make install
+      args:
+        chdir: "/tmp/libjwt"
 
 - hosts: controller_node
   become: true
@@ -44,7 +93,7 @@
     - name: Clone Munge repository
       git:
         repo: "https://github.com/dun/munge.git"
-        dest: "/home/billy.nguyen@sentientvision.com/Work/Munge"
+        dest: "/home/bnguyen/Work/Munge"
         version: "master"
         update: yes
       tags: clone
@@ -52,27 +101,27 @@
     - name: List files in the Munge directory
       command: ls -la
       args:
-        chdir: "/home/billy.nguyen@sentientvision.com/Work/Munge"
+        chdir: "/home/bnguyen/Work/Munge"
 
     - name: Run autoreconf (if necessary)
       command: autoreconf -i
       args:
-        chdir: "/home/billy.nguyen@sentientvision.com/Work/Munge"
+        chdir: "/home/bnguyen/Work/Munge"
 
     - name: Configure Munge
       command: "./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --runstatedir=/run"
       args:
-        chdir: "/home/billy.nguyen@sentientvision.com/Work/Munge"
+        chdir: "/home/bnguyen/Work/Munge"
 
     - name: Compile Munge (make)
       command: "make"
       args:
-        chdir: "/home/billy.nguyen@sentientvision.com/Work/Munge"
+        chdir: "/home/bnguyen/Work/Munge"
 
     - name: Install Munge (make install)
       command: "make install"
       args:
-        chdir: "/home/billy.nguyen@sentientvision.com/Work/Munge"
+        chdir: "/home/bnguyen/Work/Munge"
       become: true
 
 - hosts: controller_node
@@ -145,34 +194,34 @@
 - hosts: controller_node
   become: true
   tasks:
-    - name: Clone Slurm repository
+    - name: Clone Slurm repository (slurm-24.11 branch)
       git:
         repo: "https://github.com/SchedMD/slurm.git"
-        dest: "/home/billy.nguyen@sentientvision.com/Work/Slurm"
-        version: "master"
+        dest: "/home/bnguyen/Work/Slurm"
+        version: "slurm-24.11"
         update: yes
       tags: clone
 
     - name: List files in the Slurm directory
       command: ls -la
       args:
-        chdir: "/home/billy.nguyen@sentientvision.com/Work/Slurm"
+        chdir: "/home/bnguyen/Work/Slurm"
 
     - name: Run autoreconf (if necessary)
       command: autoreconf -i
       args:
-        chdir: "/home/billy.nguyen@sentientvision.com/Work/Slurm"
-      when: "'configure' not in lookup('fileglob', '/home/billy.nguyen@sentientvision.com/Work/Slurm/*')"
+        chdir: "/home/bnguyen/Work/Slurm"
+      when: "'configure' not in lookup('fileglob', '/home/bnguyen/Work/Slurm/*')"
 
     - name: Configure Slurm
       command: "./configure --with-jwt=/usr/local/ --with-bpf --with-http-parser=/usr/local/"
       args:
-        chdir: "/home/billy.nguyen@sentientvision.com/Work/Slurm"
+        chdir: "/home/bnguyen/Work/Slurm"
 
     - name: Install Slurm (make install)
       command: "make install"
       args:
-        chdir: "/home/billy.nguyen@sentientvision.com/Work/Slurm"
+        chdir: "/home/bnguyen/Work/Slurm"
       become: true
 
 
@@ -206,7 +255,7 @@
           # See the slurm.conf man page for more information.
           #
           ClusterName=cluster
-          ControlMachine=DEV-DSKTP-BillyN
+          ControlMachine=BM-Ubuntu24
           SlurmctldParameters=enable_configless,job_submit_plugins=/usr/local/etc/job_submit.lua
           #SlurmctldHost=DEV-DSKTP-BillyN          
           #SlurmctldHost=
@@ -314,13 +363,13 @@
           #
           # LOGGING AND ACCOUNTING
           #AccountingStorageEnforce=0
-          AccountingStorageHost=DEV-DSKTP-BillyN
+          AccountingStorageHost=BM-Ubuntu24
           AccountingStoragePort=6819
           AccountingStorageType=accounting_storage/slurmdbd
           AccountingStorageUser=slurm
           #AccountingStoreFlags=
           JobCompType=jobcomp/mysql
-          JobCompHost=DEV-DSKTP-BillyN
+          JobCompHost=BM-Ubuntu24
           JobCompPort=3306
           JobCompUser=slurm
           JobCompPass=password
@@ -351,14 +400,14 @@
           #
           #
           # COMPUTE NODES
-          NodeName=DEV-DSKTP-BillyN CPUs=16 RealMemory=31983 Sockets=1 CoresPerSocket=8 ThreadsPerCore=2 State=UNKNOWN
+          NodeName=BM-Ubuntu24 CPUs=16 RealMemory=31983 Sockets=1 CoresPerSocket=8 ThreadsPerCore=2 State=UNKNOWN
           NodeName=dl-testnode CPUs=16 RealMemory=64215 Sockets=1 CoresPerSocket=8 ThreadsPerCore=2 State=UNKNOWN
           
           # Define partitions
-          PartitionName=DLJarvis Nodes=DEV-DSKTP-BillyN Default=YES MaxTime=INFINITE State=UP
-          PartitionName=DLInteractive Nodes=DEV-DSKTP-BillyN Default=NO MaxTime=00:02:00 State=UP
-          PartitionName=DLJarvisSmall Nodes=DEV-DSKTP-BillyN Default=NO MaxTime=INFINITE State=UP
-          PartitionName=DLJarvisSmallInteractive Nodes=DEV-DSKTP-BillyN Default=NO MaxTime=00:02:00 State=UP
+          PartitionName=DLJarvis Nodes=BM-Ubuntu24 Default=YES MaxTime=INFINITE State=UP
+          PartitionName=DLInteractive Nodes=BM-Ubuntu24 Default=NO MaxTime=00:02:00 State=UP
+          PartitionName=DLJarvisSmall Nodes=BM-Ubuntu24 Default=NO MaxTime=INFINITE State=UP
+          PartitionName=DLJarvisSmallInteractive Nodes=BM-Ubuntu24 Default=NO MaxTime=00:02:00 State=UP
           PartitionName=test Nodes=dl-testnode Default=NO MaxTime=INFINITE State=UP
         mode: '0644'
 
@@ -382,7 +431,6 @@
         group: slurm
         mode: '0700'
       loop:
-        - /var/log
         - /var/spool/slurmctld
         - /var/spool/slurmd
         - /var/spool/slurm
@@ -422,7 +470,7 @@
 
     - name: Copy systemd service files
       copy:
-        src: "/home/billy.nguyen@sentientvision.com/Work/Slurm/etc/{{ item }}"
+        src: "/home/bnguyen/Work/Slurm/etc/{{ item }}"
         dest: "/etc/systemd/system/{{ item }}"
         mode: '0644'
       loop:
@@ -449,7 +497,7 @@
           AuthType=auth/munge
           AuthAltTypes=auth/jwt
           AuthAltParameters=jwt_key=/var/spool/slurm/statesave/jwt_hs256.key
-          DbdHost=DEV-DSKTP-BillyN
+          DbdHost=BM-Ubuntu24
           DbdPort=6819
           DebugLevel=info
           PurgeEventAfter=1month
@@ -465,7 +513,7 @@
           StoragePass=password
           StorageType=accounting_storage/mysql
           StorageUser=slurm
-          StorageHost=DEV-DSKTP-BillyN
+          StorageHost=BM-Ubuntu24
         mode: '0644'
 
 - hosts: controller_node

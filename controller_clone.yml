@@ -109,7 +109,7 @@
 #        chdir: "/home/bnguyen/Work/Munge"
 
     - name: Configure Munge
-      command: "./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --runstatedir=/run"
+      command: ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --runstatedir=/run
       args:
         chdir: "/home/bnguyen/Work/Munge"
 

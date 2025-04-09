@@ -6,6 +6,15 @@
       ansible.builtin.apt:
          update_cache: yes
 
+    - name: Install required build tools
+      ansible.builtin.apt:
+        name:
+          - build-essential
+          - autoconf
+          - libtool
+          - pkg-config
+        state: present
+
     - name: Clone Munge repository
       git:
         repo: "https://github.com/dun/munge.git"
@@ -14,21 +23,25 @@
         update: yes
       tags: clone
 
+    - name: Generate configure script (autoreconf)
+      command: autoreconf -i
+      args:
+        chdir: "/home/billy.nguyen@sentientvision.com/work/Munge"
+
     - name: Configure Munge
-      command: "configure"
+      command: ./configure
       args:
         chdir: "/home/billy.nguyen@sentientvision.com/work/Munge"
 
     - name: Compile Munge (make)
-      command: "make"
+      command: make
       args:
         chdir: "/home/billy.nguyen@sentientvision.com/work/Munge"
 
     - name: Install Munge (make install)
-      command: "make install"
+      command: make install
       args:
         chdir: "/home/billy.nguyen@sentientvision.com/work/Munge"
-      become: true
 
     - name: Create munge group
       group:

@@ -67,10 +67,10 @@
         depth: 1
         single_branch: yes
 
-    - name: Run autoreconf
-      command: autoreconf --force --install
-      args:
-        chdir: "/tmp/libjwt"
+#    - name: Run autoreconf
+#      command: autoreconf --force --install
+#      args:
+#        chdir: "/tmp/libjwt"
 
     - name: Configure libjwt
       command: ./configure --prefix=/usr/local

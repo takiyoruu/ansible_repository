@@ -9,13 +9,14 @@
 #        dest: ~/
 #        mode: '777'
 
-    - name: Transfer munge.key to remote node
-      ansible.builtin.shell: scp ~/munge.key billy.nguyen@sentientvision.com@192.168.91.107:/home/billy.nguyen@sentientvision.com
-      register: scp_result
-      changed_when: scp_result.rc == 0
-      ignore_errors: true
+    - name: Transfer munge.key to home dir
+      copy:
+        src: /absolute/path/to/munge.key
+        dest: /home/billy.nguyen@sentientvision.com/munge.key
+        owner: billy.nguyen@sentientvision.com
+        mode: '0600'
 
-    - name: Remove local munge.key if transfer was successful
+     - name: Remove local munge.key if transfer was successful
       file:
         path: ~/munge.key
         state: absent

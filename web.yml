@@ -179,6 +179,11 @@
         insertafter: '^Wants=network-online.target'
         backup: yes
 
+    - name: Reload systemd daemon
+      become: true
+      ansible.builtin.command:
+        cmd: systemctl daemon-reexec
+
 - hosts: controller_node
   become: true
   tasks:

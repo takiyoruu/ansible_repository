@@ -109,7 +109,7 @@
         chdir: "/home/bnguyen/Work/Munge"
 
     - name: Configure Munge
-      command: "./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --runstatedir=/run"
+      command: "./configure"
       args:
         chdir: "/home/bnguyen/Work/Munge"
 
@@ -167,14 +167,51 @@
         group: munge
         mode: '0750'
 
+    - name: Create /usr/local/var/log/munge with correct permissions
+      file:
+        path: /usr/local/var/log/munge
+        state: directory
+        owner: munge
+        group: munge
+        mode: '0750'
+
+    - name: Create /usr/local/var/run with correct permissions
+      file:
+        path: /usr/local/var/run
+        state: directory
+        owner: munge
+        group: munge
+        mode: '0755'
+
+    - name: Create /usr/local/var/run/munge with correct permissions
+      file:
+        path: /usr/local/var/run/munge
+        state: directory
+        owner: munge
+        group: munge
+        mode: '0755'
+
 - hosts: controller_node
   become: true
   tasks:
     - name: Generate Munge key if it doesn't exist
-      command: /usr/sbin/mungekey --verbose
-      become_user: munge
+      command: /usr/local/sbin/mungekey --verbose
       args:
-        creates: /etc/munge/munge.key
+        creates: /usr/local/etc/munge/munge.key
+
+    - name: Set correct owner and permissions on Munge Directory
+      file:
+        path: /usr/local/etc/munge
+        owner: munge
+        group: munge
+        mode: '0750'
+
+    - name: Set correct owner and permissions on Munge key
+      file:
+        path: /usr/local/etc/munge/munge.key
+        owner: munge
+        group: munge
+        mode: '0600'
 
     - name: Enable and start Munge service
       ansible.builtin.systemd:
@@ -195,9 +232,9 @@
   gather_facts: false
   become: true
   tasks:
-    - name: Copy /etc/munge/munge.key to home directory
+    - name: Copy /usr/local/etc/munge/munge.key to home directory
       copy:
-        src: /etc/munge/munge.key
+        src: /usr/local/etc/munge/munge.key
         dest: /home/bnguyen/munge.key
         mode: '0777'
         remote_src: true
@@ -308,6 +345,7 @@
           #SlurmctldHost=
           #
           AuthType=auth/munge
+          AuthInfo=/var/run/munge/munge.socket.2
           AuthAltTypes=auth/jwt
           AuthAltParameters=jwt_key=/var/spool/slurm/statesave/jwt_hs256.key
           #DisableRootJobs=NO

@@ -76,14 +76,14 @@
           Group=slurm-web
         mode: '0644'
 
-  - name: Change ConditionPathExists path in slurmrestd systemd unit
-    become: true
-    ansible.builtin.lineinfile:
-      path: /etc/systemd/system/slurmrestd.service
-      regexp: '^ConditionPathExists='
-      line: 'ConditionPathExists=/usr/local/etc/slurm.conf'
-      insertafter: '^Wants=network-online.target'
-      backup: yes
+    - name: Change ConditionPathExists path in slurmrestd systemd unit
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/system/slurmrestd.service
+        regexp: '^ConditionPathExists='
+        line: 'ConditionPathExists=/usr/local/etc/slurm.conf'
+        insertafter: '^Wants=network-online.target'
+        backup: yes
 
 
 - hosts: controller_node

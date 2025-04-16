@@ -252,15 +252,15 @@
         mode: '0777'
         remote_src: true
 
-- hosts: controller_node
-  gather_facts: false
-  become: true
-  tasks:
-    - name: Copy munge.key to remote host using scp
-      shell: >
-        scp -o StrictHostKeyChecking=no /home/bnguyen/munge.key
-        billy.nguyen@sentientvision.com@192.168.91.107:~/
-      delegate_to: localhost
+#- hosts: controller_node
+#  gather_facts: false
+#  become: true
+#  tasks:
+#    - name: Copy munge.key to remote host using scp
+#      shell: >
+#        scp -o StrictHostKeyChecking=no /home/bnguyen/munge.key
+#        billy.nguyen@sentientvision.com@192.168.91.107:~/
+#      delegate_to: localhost
 
 - hosts: controller_node
   gather_facts: false

@@ -67,10 +67,10 @@
         depth: 1
         single_branch: yes
 
-#    - name: Run autoreconf
-#      command: autoreconf --force --install
-#      args:
-#        chdir: "/tmp/libjwt"
+    - name: Run autoreconf
+      command: autoreconf --force --install
+      args:
+        chdir: "/tmp/libjwt"
 
     - name: Configure libjwt
       command: ./configure --prefix=/usr/local
@@ -190,6 +190,53 @@
     - name: Display Munge service status output
       debug:
         var: munge_service_status.stdout
+
+- hosts: controller_node
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Copy /etc/munge/munge.key to home directory
+      copy:
+        src: /etc/munge/munge.key
+        dest: /home/bnguyen/munge.key
+        mode: '0777'
+        remote_src: true
+
+- hosts: controller_node
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Copy munge.key to remote host using scp
+      shell: >
+        scp -o StrictHostKeyChecking=no /home/bnguyen/munge.key
+        'billy.nguyen@sentientvision.com@192.168.91.107:~/'
+
+- hosts: controller_node
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Remove munge.key from home directory
+      file:
+        path: /home/bnguyen/munge.key
+        state: absent
+
+- hosts: compute_nodes
+  become: true
+  tasks:
+    - name: Move munge.key to /etc/munge/
+      command: mv /home/billy.nguyen@sentientvision.com/munge.key /usr/local/etc/munge/munge.key
+      args:
+        removes: /home/billy.nguyen@sentientvision.com/munge.key
+
+    - name: Change ownership to munge:munge
+      file:
+        path: /usr/local/etc/munge/munge.key
+        owner: munge
+
+    - name: Set permissions for Munge.key
+      file:
+        path: /usr/local/etc/munge/munge.key
+        mode: '0600'
 
 - hosts: controller_node
   become: true

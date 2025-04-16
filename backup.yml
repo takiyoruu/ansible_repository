@@ -4,8 +4,7 @@
   vars:
     slurm_dir: "/etc/slurm"
     service_dir: "/lib/systemd/system"
-#   backup_dir: "/mnt/UltraNAS/FastDisk/DeepLearning/SlurmBackup"
-    backup_dir: "/home/bnguyen/Work/Backup"
+    backup_dir: "/mnt/UltraNAS/FastDisk/DeepLearning/SlurmBackup"
     slurm_backup_name: "slurm_backup"
     files_to_backup:
       - "slurmctld.service"

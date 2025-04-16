@@ -80,13 +80,21 @@
         group: munge
         mode: '0750'
 
-    - name: Set ownership and permissions on /etc/munge
+    - name: Create /usr/local/var/run with correct permissions
       file:
-        path: /etc/munge
+        path: /usr/local/var/run
+        state: directory
         owner: munge
         group: munge
-        mode: '0700'
-        recurse: yes
+        mode: '0750'
+
+    - name: Create /usr/local/var/run/munge with correct permissions
+      file:
+        path: /usr/local/var/run/munge
+        state: directory
+        owner: munge
+        group: munge
+        mode: '0750'
 
     - name: Ensure /var/log is owned by root and has mode 0755
       file:

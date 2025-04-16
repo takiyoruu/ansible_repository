@@ -1,0 +1,28 @@
+---
+- hosts: controller_node
+  become: true
+  vars:
+    slurm_dir: "/usr/local/etc"
+    backup_dir: "/home/bnguyen/Work/Backup"
+    slurm_backup_name: "slurm_backup_test"
+    files_to_restore:
+      - "cgroup.conf"
+      - "job_submit.lua"
+      - "slurm.conf"
+      - "slurmdbd.conf"
+
+  tasks:
+    - name: Restore Slurm config files from backup
+      copy:
+        src: "{{ backup_dir }}/{{ item }}"
+        dest: "{{ slurm_dir }}/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop: "{{ files_to_restore }}"
+      register: restore_status
+      ignore_errors: yes
+
+    - name: Debug restoration results
+      debug:
+        var: restore_status

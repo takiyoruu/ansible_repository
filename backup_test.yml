@@ -1,0 +1,28 @@
+---
+- hosts: controller_node
+  become: true
+  vars:
+    slurm_dir: "/usr/local/etc/"
+    backup_dir: "/home/bnguyen/Work/Backup"
+    slurm_backup_name: "slurm_backup_test"
+    files_to_backup:
+      - "cgroup.conf"
+      - "job_submit.lua"
+      - "slurm.conf"
+      - "slurmdbd.conf"
+
+  tasks:
+    - name: Ensure backup directory exists
+      file:
+        path: "{{ backup_dir }}"
+        state: directory
+        owner: "root"
+        group: "root"
+        mode: '0755'
+
+    - name: Backup configuration files
+      command:
+        cmd: cp {{ slurm_dir }}/{{ item }} {{ backup_dir }}/{{ item }}
+      with_items: "{{ files_to_backup }}"
+      register: cp_backup
+      ignore_errors: yes

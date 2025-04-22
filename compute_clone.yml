@@ -111,6 +111,14 @@
         group: munge
         mode: '0750'
 
+    - name: Update ExecStart in munge systemd unit
+      become: true
+      ansible.builtin.lineinfile:
+        path: /usr/local/lib/systemd/system/munge.service
+        regexp: '^ExecStart='
+        line: 'ExecStart=/usr/local/sbin/munged --socket=/run/munge/munge.socket.2'
+        backup: yes
+
     - name: Clone Slurm repository (slurm-24.11 branch)
       git:
         repo: "https://github.com/SchedMD/slurm.git"
@@ -142,3 +150,46 @@
         shell: /sbin/nologin
         system: yes
         state: present
+
+    - name: Update ExecStart in Slurmd systemd unit
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/system/slurmd.service
+        regexp: '^ExecStart='
+        line: 'ExecStart=/usr/local/sbin/slurmd --systemd --conf-server BM-Ubuntu24:6817'
+        backup: yes
+
+    - name: Reload systemd daemon
+      become: true
+      ansible.builtin.command:
+        cmd: systemctl daemon-reexec
+
+    - name: Enable and start Munge service
+      ansible.builtin.systemd:
+        name: munge
+        enabled: yes
+        state: started
+
+    - name: Check Munge service status
+      command: systemctl status munge.service
+      register: munge_service_status
+      ignore_errors: yes
+
+    - name: Display Munge service status output
+      debug:
+        var: munge_service_status.stdout
+
+    - name: Enable and Start Slurm
+      systemd:
+        name: slurmd
+        enabled: yes
+        state: started
+
+    - name: Check Slurm Status
+      command: systemctl status slurmd
+      register: slurm_service_status
+      ignore_errors: yes
+
+    - name: Display slurm service status output
+      debug:
+        var: slurm_service_status.results

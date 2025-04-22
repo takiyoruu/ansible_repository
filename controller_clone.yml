@@ -368,7 +368,7 @@
           #EpilogSlurmctld=
           #FirstJobId=1
           #MaxJobId=67043328
-          #GresTypes=   
+          #GresTypes=gpu   
           #GroupUpdateForce=0
           #GroupUpdateTime=600
           #JobFileAppend=0

@@ -42,8 +42,9 @@
         state: present
 
     - name: Create Prometheus directory
+      become: true
       file:
-        path: /home/billy.nguyen@sentientvision.com/work/Prometheus
+        path: /home/bnguyen/Work/Prometheus
         state: directory
         mode: '0755'
 

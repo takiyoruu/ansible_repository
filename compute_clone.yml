@@ -116,7 +116,7 @@
       ansible.builtin.lineinfile:
         path: /usr/local/lib/systemd/system/munge.service
         regexp: '^ExecStart='
-        line: 'ExecStart=/usr/local/sbin/munged --socket=/run/munge/munge.socket.2'
+        line: 'ExecStart=/usr/local/sbin/munged --socket=/usr/local/var/run/munge/munge.socket.2'
         backup: yes
 
     - name: Clone Slurm repository (slurm-24.11 branch)

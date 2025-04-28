@@ -218,7 +218,7 @@
       ansible.builtin.lineinfile:
         path: /usr/local/lib/systemd/system/munge.service
         regexp: '^ExecStart='
-        line: 'ExecStart=/usr/local/sbin/munged --socket=/run/munge/munge.socket.2'
+        line: 'ExecStart=/usr/local/sbin/munged --socket=/usr/local/var/run/munge/munge.socket.2'
         backup: yes
 
     - name: Reload systemd daemon
@@ -241,69 +241,69 @@
       debug:
         var: munge_service_status.stdout
 
-- hosts: controller_node
-  gather_facts: false
-  become: true
-  tasks:
-    - name: Copy /usr/local/etc/munge/munge.key to home directory
-      copy:
-        src: /usr/local/etc/munge/munge.key
-        dest: /home/bnguyen/munge.key
-        mode: '0777'
-        remote_src: true
+#- hosts: controller_node
+#  gather_facts: false
+#  become: true
+#  tasks:
+#    - name: Copy /usr/local/etc/munge/munge.key to home directory
+#      copy:
+#        src: /usr/local/etc/munge/munge.key
+#        dest: /home/bnguyen/munge.key
+#        mode: '0777'
+#        remote_src: true
 
-    - name: SCP munge.key to remote server
-      ansible.builtin.command: >
-        scp -o StrictHostKeyChecking=no
-        /home/bnguyen/munge.key
-        billy.nguyen@sentientvision.com@192.168.91.107:~/
-      register: scp_result
-      ignore_errors: yes
+#    - name: SCP munge.key to remote server
+#      ansible.builtin.command: >
+#        scp -o StrictHostKeyChecking=no
+#        /home/bnguyen/munge.key
+#        billy.nguyen@sentientvision.com@192.168.91.107:~/
+#      register: scp_result
+#      ignore_errors: yes
 
-- hosts: controller_node
-  gather_facts: false
-  become: true
-  tasks:
-    - name: Remove munge.key from home directory
-      file:
-        path: /home/bnguyen/munge.key
-        state: absent
+#- hosts: controller_node
+#  gather_facts: false
+#  become: true
+#  tasks:
+#    - name: Remove munge.key from home directory
+#      file:
+#        path: /home/bnguyen/munge.key
+#        state: absent
 
-- hosts: compute_nodes
-  become: true
-  tasks:
-    - name: Move munge.key to /etc/munge/
-      command: mv /home/billy.nguyen@sentientvision.com/munge.key /usr/local/etc/munge/munge.key
-      args:
-        removes: /home/billy.nguyen@sentientvision.com/munge.key
+#- hosts: compute_nodes
+#  become: true
+#  tasks:
+#    - name: Move munge.key to /etc/munge/
+#      command: mv /home/billy.nguyen@sentientvision.com/munge.key /usr/local/etc/munge/munge.key
+#      args:
+#        removes: /home/billy.nguyen@sentientvision.com/munge.key
 
-    - name: Change ownership to munge:munge
-      file:
-        path: /usr/local/etc/munge/munge.key
-        owner: munge
-        group: munge
+#    - name: Change ownership to munge:munge
+#      file:
+#        path: /usr/local/etc/munge/munge.key
+#        owner: munge
+#        group: munge
 
-    - name: Set permissions for Munge.key
-      file:
-        path: /usr/local/etc/munge/munge.key
-        mode: '0700'
+#    - name: Set permissions for Munge.key
+#      file:
+#        path: /usr/local/etc/munge/munge.key
+#        mode: '0700'
 
-- hosts: controller_node
-  gather_facts: false
-  become: true
-  tasks:
-    - name: Remove munge.key from home directory
-      file:
-        path: /home/bnguyen/munge.key
-        state: absent
+#- hosts: controller_node
+#  gather_facts: false
+#  become: true
+#  tasks:
+#    - name: Remove munge.key from home directory
+#      file:
+#        path: /home/bnguyen/munge.key
+#        state: absent
 
-- hosts: compute_nodes
-  become: true
-  tasks:
-    - name: Move munge.key to /etc/munge/
-      command: mv /home/billy.nguyen@sentientvision.com/munge.key /usr/local/etc/munge/munge.key
-      args:
-        removes: /home/billy.nguyen@sentientvision.com/munge.key
+#- hosts: compute_nodes
+#  become: true
+#  tasks:
+#    - name: Move munge.key to /etc/munge/
+#      command: mv /home/billy.nguyen@sentientvision.com/munge.key /usr/local/etc/munge/munge.key
+#      args:
+#        removes: /home/billy.nguyen@sentientvision.com/munge.key
 
     - name: Change ownership to munge:munge
       file:
@@ -385,7 +385,7 @@
           #SlurmctldHost=
           #
           AuthType=auth/munge
-          AuthInfo=/var/run/munge/munge.socket.2
+          AuthInfo=/usr/local/var/run/munge/munge.socket.2
           AuthAltTypes=auth/jwt
           AuthAltParameters=jwt_key=/var/spool/slurm/statesave/jwt_hs256.key
           #DisableRootJobs=NO
@@ -618,7 +618,7 @@
           ArchiveTXN=no
           ArchiveUsage=no
           #ArchiveScript=/usr/sbin/slurm.dbd.archive
-          AuthInfo=/var/run/munge/munge.socket.2
+          AuthInfo=/usr/local/var/run/munge/munge.socket.2
           AuthType=auth/munge
           AuthAltTypes=auth/jwt
           AuthAltParameters=jwt_key=/var/spool/slurm/statesave/jwt_hs256.key

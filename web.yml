@@ -6,6 +6,22 @@
       ansible.builtin.apt:
         update_cache: yes
 
+    - name: Repository signing key
+      shell: |
+        sudo curl -sS https://pkgs.rackslab.io/keyring.asc | gpg --dearmor | sudo tee /usr/share/keyrings/rackslab.gpg > /dev/null
+
+    - name: Create APT sources file
+      ansible.builtin.copy:
+        dest: "/etc/apt/sources.list.d/rackslab.sources"
+        content: |
+          Types: deb
+          URIs: https://pkgs.rackslab.io/deb
+          Suites: ubuntu24.04
+          Components: main
+          Architectures: amd64
+          Signed-By: /usr/share/keyrings/rackslab.gpg
+        mode: '0644'
+
     - name: Install Go
       apt:
         name: golang

@@ -273,14 +273,14 @@
         mode: '0440'
       when: jwt_key_output.changed
 
-    - name: Change ConditionPathExists path in slurmrestd systemd unit
-      become: true
-      ansible.builtin.lineinfile:
-        path: /usr/lib/systemd/system/slurmrestd.service
-        regexp: '^ConditionPathExists='
-        line: 'ConditionPathExists=/usr/local/etc/slurm.conf'
-        insertafter: '^Wants=network-online.target'
-        backup: yes
+#    - name: Change ConditionPathExists path in slurmrestd systemd unit
+#      become: true
+#      ansible.builtin.lineinfile:
+#        path: /usr/lib/systemd/system/slurmrestd.service
+#        regexp: '^ConditionPathExists='
+#        line: 'ConditionPathExists=/usr/local/etc/slurm.conf'
+#        insertafter: '^Wants=network-online.target'
+#        backup: yes
 
     - name: Reload systemd daemon
       become: true
@@ -293,7 +293,6 @@
         enabled: yes
         state: started
       loop:
-        - slurmrestd
         - slurm-web-agent
         - slurm-web-gateway
 
@@ -302,7 +301,6 @@
       register: slurm_service_status
       ignore_errors: yes
       loop:
-        - slurmrestd
         - slurm-web-agent
         - slurm-web-gateway
 

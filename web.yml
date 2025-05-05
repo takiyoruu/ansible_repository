@@ -167,7 +167,6 @@
     - name: Install Slurm-web, Racksdb and dependencies
       ansible.builtin.apt:
         name:
-          - racksdb
           - libcairo2-dev
           - libgirepository1.0-dev
 

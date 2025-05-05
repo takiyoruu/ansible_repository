@@ -22,20 +22,20 @@
     - name: Create Prometheus directory
       become: true
       file:
-        path: /home/bnguyen/Work/Prometheus
+        path: /home/billy.nguyen@sentientvision.com/work/Prometheus
         state: directory
         mode: '0755'
 
     - name: Clone Prometheus repository
       git:
         repo: "https://github.com/prometheus/prometheus.git"
-        dest: "/home/bnguyen/Work/Prometheus"
+        dest: "/home/billy.nguyen@sentientvision.com/work/Prometheus"
         version: "main"
         update: yes
 
     - name: Build Prometheus
       make:
-        chdir: "/home/bnguyen/Work/Prometheus"
+        chdir: "/home/billy.nguyen@sentientvision.com/work/Prometheus"
         target: build
 
     - name: Create prometheus group
@@ -69,7 +69,7 @@
 
     - name: Create Prometheus config file in workspace
       copy:
-        dest: "/home/bnguyen/Work/Prometheus/prometheus.yml"
+        dest: "/home/billy.nguyen@sentientvision.com/work/Prometheus/prometheus.yml"
         content: |
           # my global config
           global:
@@ -99,7 +99,7 @@
 
     - name: Move prometheus.yml to /etc/prometheus/
       copy:
-        src: "/home/bnguyen/Work/Prometheus/prometheus.yml"
+        src: "/home/billy.nguyen@sentientvision.com/work/Prometheus/prometheus.yml"
         dest: "/etc/prometheus/prometheus.yml"
         owner: prometheus
         group: prometheus
@@ -107,7 +107,7 @@
 
     - name: Move promtool to /usr/local/bin/
       copy:
-        src: "/home/bnguyen/Work/Prometheus/promtool"
+        src: "/home/billy.nguyen@sentientvision.com/work/Prometheus/promtool"
         dest: "/usr/local/bin/promtool"
         owner: prometheus
         group: prometheus

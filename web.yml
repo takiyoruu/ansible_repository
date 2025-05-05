@@ -33,6 +33,12 @@
         version: "main"
         update: yes
 
+    - name: Ensure curl is installed
+      apt:
+        name: curl
+        state: present
+      become: true
+
     - name: Build Prometheus
       make:
         chdir: "/home/billy.nguyen@sentientvision.com/work/Prometheus"

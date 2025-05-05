@@ -1,27 +1,5 @@
 ---
-- hosts: controller_node
-  become: true
-  tasks:
-    - name: Repository signing key
-      shell: |
-        sudo curl -sS https://pkgs.rackslab.io/keyring.asc | gpg --dearmor | sudo tee /usr/share/keyrings/rackslab.gpg > /dev/null
-
-- hosts: controller_node
-  become: yes
-  tasks:
-    - name: Create APT sources file
-      ansible.builtin.copy:
-        dest: "/etc/apt/sources.list.d/rackslab.sources"
-        content: |
-          Types: deb
-          URIs: https://pkgs.rackslab.io/deb
-          Suites: ubuntu24.04
-          Components: main
-          Architectures: amd64
-          Signed-By: /usr/share/keyrings/rackslab.gpg
-        mode: '0644'
-
-- hosts: controller_node
+- hosts: compute_node
   become: true
   tasks:
     - name: Update apt package cache
@@ -189,47 +167,6 @@
 
         state: present
 
-- hosts: controller_node
-  become: true
-  tasks:
-    - name: Install SlurmRest package using dpkg
-      command: sudo dpkg -i /home/bnguyen/Work/SlurmRest/slurmrestd_24.11.1-1_amd64.deb
-      args:
-        chdir: /home/bnguyen/Work/SlurmRest
-      register: dpkg_install
-      ignore_errors: yes
-
-    - name: Fix missing dependencies
-      ansible.builtin.apt:
-        name: "*"
-        state: latest
-        force_apt_get: yes
-      when: dpkg_install.failed
-
-
-- hosts: controller_node
-  become: yes
-  tasks:
-    - name: Create Slurmrest Config file
-      ansible.builtin.copy:
-        dest: "/etc/systemd/system/slurmrestd.service.d/slurm-web.conf"
-        content: |
-          [Service]
-          # Unset vendor unit ExecStart to avoid cumulative definition
-          ExecStart=
-          Environment=
-          # Disable slurm user security check
-          Environment=SLURMRESTD_SECURITY=disable_user_check
-          ExecStart=/usr/local/sbin/slurmrestd $SLURMRESTD_OPTIONS unix:/run/slurmrestd/slurmrestd.socket
-          RuntimeDirectory=slurmrestd
-          RuntimeDirectoryMode=0755
-          User=slurm-web
-          Group=slurm-web
-        mode: '0644'
-
-- hosts: controller_node
-  become: yes
-  tasks:
     - name: Install Slurm-Web-Agent and Slurm-Web-Gateway
       ansible.builtin.apt:
         name:
@@ -243,9 +180,6 @@
         state: directory
         mode: '0755'
 
-- hosts: controller_node
-  become: yes
-  tasks:
     - name: Create Slurm-web-agent configuration file
       ansible.builtin.copy:
         dest: "/etc/slurm-web/agent.ini"
@@ -290,15 +224,12 @@
             compute
         mode: '0644'
 
-- hosts: controller_node
-  become: yes
-  tasks:
     - name: Create Slurm-web-gateway configuration file
       ansible.builtin.copy:
         dest: "/etc/slurm-web/gateway.ini"
         content: |
           [agents]
-          url=http://localhost:5012
+          url=http://0.0.0.0:5012
         mode: '0644'
 
     - name: Create directory /var/lib/slurm
@@ -335,9 +266,6 @@
       ansible.builtin.command:
         cmd: systemctl daemon-reexec
 
-- hosts: controller_node
-  become: true
-  tasks:
     - name: Enable and start Slurm-web services
       systemd:
         name: "{{ item }}"

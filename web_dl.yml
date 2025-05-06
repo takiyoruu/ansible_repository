@@ -1,5 +1,5 @@
 ---
-- hosts: controller_node
+- hosts: compute_node
   become: true
   tasks:
     - name: Repository signing key

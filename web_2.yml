@@ -1,0 +1,350 @@
+---
+- hosts: controller_node
+  become: true
+  tasks:
+    - name: Repository signing key
+      shell: |
+        sudo curl -sS https://pkgs.rackslab.io/keyring.asc | gpg --dearmor | sudo tee /usr/share/keyrings/rackslab.gpg > /dev/null
+
+    - name: Create APT sources file
+      ansible.builtin.copy:
+        dest: "/etc/apt/sources.list.d/rackslab.sources"
+        content: |
+          Types: deb
+          URIs: https://pkgs.rackslab.io/deb
+          Suites: ubuntu24.04
+          Components: main
+          Architectures: amd64
+          Signed-By: /usr/share/keyrings/rackslab.gpg
+        mode: '0644'
+
+    - name: Update apt package cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Ensure curl is installed
+      apt:
+        name: curl
+        state: present
+      become: true
+
+    - name: Install Go
+      apt:
+        name: golang
+        state: present
+        update_cache: yes
+
+    - name: Install Node.js and npm
+      apt:
+        name:
+          - nodejs
+          - npm
+        state: present
+
+    - name: Create Prometheus directory
+      become: true
+      file:
+        path: /opt/Prometheus
+        state: directory
+        mode: '0755'
+
+    - name: Clone Prometheus repository
+      git:
+        repo: "https://github.com/prometheus/prometheus.git"
+        dest: "/opt/Prometheus"
+        version: "main"
+        update: yes
+
+    - name: Build Prometheus
+      make:
+        chdir: "/opt/Prometheus"
+        target: build
+
+    - name: Create prometheus group
+      group:
+        name: prometheus
+        system: yes
+
+    - name: Create prometheus user
+      user:
+        name: prometheus
+        group: prometheus
+        shell: /bin/false
+        system: yes
+        create_home: no
+
+    - name: Create Prometheus directory in etc
+      file:
+        path: /etc/prometheus
+        state: directory
+        mode: '0755'
+        owner: prometheus
+        group: prometheus
+
+    - name: Create /var/lib/prometheus directory
+      file:
+        path: /var/lib/prometheus
+        state: directory
+        mode: '0755'
+        owner: prometheus
+        group: prometheus
+
+    - name: Create Prometheus config file in workspace
+      copy:
+        dest: "/opt/Prometheus/prometheus.yml"
+        content: |
+          # my global config
+          global:
+            scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+            evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+            # scrape_timeout is set to the global default (10s).
+
+          # Alertmanager configuration
+          alerting:
+            alertmanagers:
+              - static_configs:
+                  - targets:
+                    # - alertmanager:9093
+
+          # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+          rule_files:
+            # - "first_rules.yml"
+            # - "second_rules.yml"
+
+          # A scrape configuration containing exactly one endpoint to scrape:
+          # Here it's Prometheus itself.
+          scrape_configs:
+            - job_name: slurm
+              scrape_interval: 30s
+              static_configs:
+                - targets: ['0.0.0.0:5012']
+
+    - name: Move prometheus.yml to /etc/prometheus/
+      copy:
+        src: "/opt/Prometheus/prometheus.yml"
+        dest: "/etc/prometheus/prometheus.yml"
+        owner: prometheus
+        group: prometheus
+        mode: '0644'
+
+    - name: Move promtool to /usr/local/bin/
+      copy:
+        src: "/opt/Prometheus/promtool"
+        dest: "/usr/local/bin/promtool"
+        owner: prometheus
+        group: prometheus
+        mode: '0644'
+
+    - name: Create Prometheus systemd service file
+      copy:
+        dest: /etc/systemd/system/prometheus.service
+        content: |
+          [Unit]
+          Description=Prometheus Monitoring
+          Wants=network-online.target
+          After=network-online.target
+
+          [Service]
+          User=prometheus
+          Group=prometheus
+          Type=simple
+          ExecStart=/usr/local/bin/prometheus \
+            --config.file=/etc/prometheus/prometheus.yml \
+            --storage.tsdb.path=/var/lib/prometheus \
+            --web.console.templates=/etc/prometheus/consoles \
+            --web.console.libraries=/etc/prometheus/console_libraries \
+            --web.enable-lifecycle \
+            --log.level=info
+
+          [Install]
+          WantedBy=multi-user.target
+        owner: prometheus
+        group: prometheus
+        mode: '0644'
+      notify: reload systemd
+
+    - name: Change ownership of systemd service file
+      file:
+        path: /etc/systemd/system/prometheus.service
+        owner: prometheus
+        group: prometheus
+
+  handlers:
+    - name: reload systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: restart prometheus
+      systemd:
+        name: prometheus
+        state: restarted
+        enabled: yes
+
+    - name: Install Slurm-web, Racksdb and dependencies
+      ansible.builtin.apt:
+        name:
+          - racksdb
+          - libcairo2-dev
+          - libgirepository1.0-dev
+
+        state: present
+
+    - name: Install SlurmRest package using dpkg
+      command: sudo dpkg -i /opt/SlurmRestd/slurmrestd_24.11.1-1_amd64.deb
+      args:
+        chdir: /opt/SlurmRestd
+      register: dpkg_install
+      ignore_errors: yes
+
+    - name: Fix missing dependencies
+      ansible.builtin.apt:
+        name: "*"
+        state: latest
+        force_apt_get: yes
+      when: dpkg_install.failed
+
+    - name: Create Slurmrest Config file
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/slurmrestd.service.d/slurm-web.conf"
+        content: |
+          [Service]
+          # Unset vendor unit ExecStart to avoid cumulative definition
+          ExecStart=
+          Environment=
+          # Disable slurm user security check
+          Environment=SLURMRESTD_SECURITY=disable_user_check
+          ExecStart=/usr/local/sbin/slurmrestd unix:/run/slurmrestd/slurmrestd.socket
+          RuntimeDirectory=slurmrestd
+          RuntimeDirectoryMode=0755
+          User=slurm-web
+          Group=slurm-web
+        mode: '0644'
+
+    - name: Install Slurm-Web-Agent and Slurm-Web-Gateway
+      ansible.builtin.apt:
+        name:
+          - slurm-web-agent
+          - slurm-web-gateway
+        state: present
+
+    - name: Create directory /etc/slurm-web
+      ansible.builtin.file:
+        path: /etc/slurm-web
+        state: directory
+        mode: '0755'
+
+    - name: Create Slurm-web-agent configuration file
+      ansible.builtin.copy:
+        dest: "/etc/slurm-web/agent.ini"
+        content: |
+          [service]
+          cluster=cluster
+          interface=0.0.0.0
+          port=5012
+          [metrics]
+          enabled=yes
+
+          [racksdb]
+
+          # Path to RacksDB database
+          #
+          # Default value: /var/lib/racksdb
+          db=/var/lib/racksdb
+
+          # Path to RacksDB database schema
+          #
+          # Default value: /usr/share/racksdb/schemas/racksdb.yml
+          schema=/usr/share/racksdb/schemas/racksdb.yml
+
+          # Path to site-specific RacksDB schema extensions
+          #
+          # Default value: /etc/racksdb/extensions.yml
+          extensions=/etc/racksdb/extensions.yml
+
+          # Path to RacksDB database schema
+          #
+          # Default value: /usr/share/racksdb/schemas/drawings.yml
+          drawings_schema=/usr/share/racksdb/schemas/drawings.yml
+
+          # Name of the infrastructure for the cluster in RacksDB. By default, the
+          # cluster name is used.
+          infrastructure=Jarvis
+
+          # List of tags applied to compute nodes in RacksDB database
+          #
+          # Default value:
+          # - compute
+          tags=
+            compute
+        mode: '0644'
+
+    - name: Create Slurm-web-gateway configuration file
+      ansible.builtin.copy:
+        dest: "/etc/slurm-web/gateway.ini"
+        content: |
+          [service]
+          interface=0.0.0.0
+          port=5011
+          [agents]
+          url=http://192.168.101.18:5012
+          [ui]
+          host=http://192.168.101.18:5011
+        mode: '0644'
+
+    - name: Create directory /var/lib/slurm
+      ansible.builtin.file:
+        path: /var/lib/slurm-web
+        state: directory
+        mode: '0755'
+
+    - name: Generate JWT key for Slurm web API
+      command: sudo /usr/libexec/slurm-web/slurm-web-gen-jwt-key
+      args:
+        creates: /var/lib/slurm/slurm-web.jwks
+      register: jwt_key_output
+
+    - name: Set correct ownership for JWT key
+      file:
+        path: /var/lib/slurm-web/jwt.key
+        owner: slurm
+        group: slurm-web
+        mode: '0440'
+      when: jwt_key_output.changed
+
+    - name: Change ConditionPathExists path in slurmrestd systemd unit
+      become: true
+      ansible.builtin.lineinfile:
+        path: /usr/lib/systemd/system/slurmrestd.service
+        regexp: '^ConditionPathExists='
+        line: 'ConditionPathExists=/usr/local/etc/slurm.conf'
+        insertafter: '^Wants=network-online.target'
+        backup: yes
+
+    - name: Reload systemd daemon
+      become: true
+      ansible.builtin.command:
+        cmd: systemctl daemon-reexec
+
+    - name: Enable and start Slurm-web services
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop:
+        - slurmrestd
+        - slurm-web-agent
+        - slurm-web-gateway
+
+    - name: Check Slurm-web services status
+      command: systemctl status "{{ item }}"
+      register: slurm_service_status
+      ignore_errors: yes
+      loop:
+        - slurmrestd
+        - slurm-web-agent
+        - slurm-web-gateway
+
+    - name: Display Slurm services status output
+      debug:
+        var: slurm_service_status.results
+
